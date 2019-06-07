@@ -146,7 +146,7 @@ decodeFromServerMsg reqMap bytes =
             | "id" `HM.member` obj -> RspCustomServer $ fromJust $ decode bytes
             | otherwise -> NotCustomServer $ fromJust $ decode bytes
 
-      Error e -> error e
+      Error e -> error ("Failed to decode " <> show methodStr <> ": " <> e)
 
     Nothing -> case decode bytes :: Maybe (ResponseMessage Value) of
       Just msg -> case HM.lookup (requestId $ msg ^. id) reqMap of
