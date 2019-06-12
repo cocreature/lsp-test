@@ -4,6 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Language.Haskell.LSP.Test.Session
   ( Session
@@ -257,20 +258,20 @@ updateState (ReqApplyWorkspaceEdit r) = do
       latestVersions = map ((^. textDocument) . last) sortedVersions
       bumpedVersions = map (version . _Just +~ 1) latestVersions
 
-  forM_ bumpedVersions $ \(VersionedTextDocumentIdentifier uri v) ->
+  forM_ bumpedVersions $ \(VersionedTextDocumentIdentifier (toNormalizedUri -> uri) v) ->
     modify $ \s ->
       let oldVFS = vfs s
           update (VirtualFile oldV t mf) = VirtualFile (fromMaybe oldV v) t mf
           newVFS = Map.adjust update uri oldVFS
       in s { vfs = newVFS }
 
-  where checkIfNeedsOpened uri = do
+  where checkIfNeedsOpened (toNormalizedUri -> uri) = do
           oldVFS <- vfs <$> get
           ctx <- ask
 
           -- if its not open, open it
           unless (uri `Map.member` oldVFS) $ do
-            let fp = fromJust $ uriToFilePath uri
+            let fp = fromJust $ uriToFilePath $ fromNormalizedUri $ uri
             contents <- liftIO $ T.readFile fp
             let item = TextDocumentItem (filePathToUri fp) "" 0 contents
                 msg = NotificationMessage "2.0" TextDocumentDidOpen (DidOpenTextDocumentParams item)

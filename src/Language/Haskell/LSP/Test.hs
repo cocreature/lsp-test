@@ -201,7 +201,7 @@ runSessionWithConfig config serverExe caps rootDir session = do
 documentContents :: TextDocumentIdentifier -> Session T.Text
 documentContents doc = do
   vfs <- vfs <$> get
-  let file = vfs Map.! (doc ^. uri)
+  let file = vfs Map.! toNormalizedUri (doc ^. uri)
   return $ Rope.toText $ Language.Haskell.LSP.VFS._text file
 
 -- | Parses an ApplyEditRequest, checks that it is for the passed document
@@ -464,7 +464,7 @@ getVersionedDoc :: TextDocumentIdentifier -> Session VersionedTextDocumentIdenti
 getVersionedDoc (TextDocumentIdentifier uri) = do
   fs <- vfs <$> get
   let ver =
-        case fs Map.!? uri of
+        case fs Map.!? toNormalizedUri uri of
           Just (VirtualFile v _ _) -> Just v
           _ -> Nothing
   return (VersionedTextDocumentIdentifier uri ver)
